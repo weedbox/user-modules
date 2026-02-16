@@ -45,6 +45,7 @@ type Params struct {
 type RBACManager struct {
 	weedbox.Module[*Params]
 	manager *privy.Manager
+	storage privy.Storage
 	opts    *options
 }
 
@@ -81,6 +82,9 @@ func (m *RBACManager) OnStart(ctx context.Context) error {
 		m.Logger().Error("Failed to initialize RBAC storage", zap.Error(err))
 		return err
 	}
+
+	// Store storage reference for direct operations
+	m.storage = storage
 
 	// Create manager with storage
 	m.manager = privy.CreateManager(privy.WithStorage(storage))
@@ -213,6 +217,24 @@ func (m *RBACManager) AssignPermissions(roleKey string, permissions []string) er
 // RemovePermissions removes permissions from a role
 func (m *RBACManager) RemovePermissions(roleKey string, permissions []string) error {
 	return m.manager.RemovePermissions(roleKey, permissions)
+}
+
+// UpdateRole updates an existing role's name, description, and permissions
+func (m *RBACManager) UpdateRole(key string, config privy.RoleConfig) (*privy.Role, error) {
+	role, err := m.manager.GetRole(key)
+	if err != nil {
+		return nil, err
+	}
+
+	role.Name = config.Name
+	role.Description = config.Description
+	role.Permissions = config.Permissions
+
+	if err := m.storage.UpdateRole(role); err != nil {
+		return nil, err
+	}
+
+	return role, nil
 }
 
 // GetResource gets a resource by path

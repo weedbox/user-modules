@@ -27,6 +27,7 @@ go get github.com/weedbox/user-modules
 | [auth](auth/) | `github.com/weedbox/user-modules/auth` | JWT token management and middleware |
 | [user_apis](user_apis/) | `github.com/weedbox/user-modules/user_apis` | REST API handlers for user management |
 | [auth_apis](auth_apis/) | `github.com/weedbox/user-modules/auth_apis` | REST API handlers for login/refresh/logout |
+| [role_apis](role_apis/) | `github.com/weedbox/user-modules/role_apis` | REST API handlers for role/resource management |
 | [http_token_validator](http_token_validator/) | `github.com/weedbox/user-modules/http_token_validator` | Optional global auth middleware |
 
 ## Quick Start
@@ -41,6 +42,7 @@ import (
     "github.com/weedbox/user-modules/auth_apis"
     "github.com/weedbox/user-modules/http_token_validator"
     "github.com/weedbox/user-modules/rbac"
+    "github.com/weedbox/user-modules/role_apis"
     "github.com/weedbox/user-modules/user"
     "github.com/weedbox/user-modules/user_apis"
 )
@@ -61,6 +63,7 @@ func loadModules() ([]fx.Option, error) {
         http_token_validator.Module("http_token_validator"),
         user_apis.Module("user_apis"),
         auth_apis.Module("auth_apis"),
+        role_apis.Module("role_apis"),
     }
     return modules, nil
 }
@@ -132,6 +135,20 @@ export MYAPP_HTTP_SERVER_PORT=8080
 | DELETE | `/apis/v1/user/:id` | `user.delete` | Delete a user |
 | PUT | `/apis/v1/user/:id/password` | `user.password.update` | Update user password |
 | POST | `/apis/v1/user/authenticate` | `user.read` | Authenticate credentials |
+
+### Role Management (`role_apis`)
+
+| Method | Path | Permission | Description |
+|--------|------|------------|-------------|
+| GET | `/apis/v1/roles` | `role.list` | List all roles |
+| POST | `/apis/v1/role` | `role.create` | Create a new role |
+| GET | `/apis/v1/role/:key` | `role.read` | Get role by key |
+| PUT | `/apis/v1/role/:key` | `role.update` | Update a role |
+| DELETE | `/apis/v1/role/:key` | `role.delete` | Delete a role |
+| POST | `/apis/v1/role/:key/permissions` | `role.update` | Assign permissions to a role |
+| DELETE | `/apis/v1/role/:key/permissions` | `role.update` | Remove permissions from a role |
+| GET | `/apis/v1/resources` | `role.read` | List all resources (permission catalog) |
+| GET | `/apis/v1/resource/*path` | `role.read` | Get resource details by path |
 
 ### Example: Login
 
@@ -233,6 +250,7 @@ database.DatabaseConnector (from common-modules)
               |
               +---> user_apis (+ http_server + user.UserManager)
               +---> auth_apis (+ http_server)
+              +---> role_apis (+ http_server + rbac.RBACManager)
               +---> http_token_validator (+ http_server) [optional]
 ```
 

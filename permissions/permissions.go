@@ -28,6 +28,7 @@ func CRUDActions() []privy.Action {
 const (
 	ResourceUser = "user"
 	ResourceAuth = "auth"
+	ResourceRole = "role"
 )
 
 // GetBuiltinResourceConfigs returns builtin resource configurations for user and auth
@@ -49,6 +50,14 @@ func GetBuiltinResourceConfigs() []privy.ResourceConfig {
 					},
 				},
 			},
+		},
+
+		// Role management
+		{
+			Key:         ResourceRole,
+			Name:        "Role",
+			Description: "Role management",
+			Actions:     CRUDActions(),
 		},
 
 		// Authentication
@@ -118,6 +127,13 @@ const (
 	PermUserDelete         = "user.delete"
 	PermUserList           = "user.list"
 	PermUserPasswordUpdate = "user.password.update"
+
+	// Role permissions
+	PermRoleCreate = "role.create"
+	PermRoleRead   = "role.read"
+	PermRoleUpdate = "role.update"
+	PermRoleDelete = "role.delete"
+	PermRoleList   = "role.list"
 
 	// Auth permissions
 	PermAuthLogin   = "auth.login"
