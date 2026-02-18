@@ -9,6 +9,7 @@ import (
 	"github.com/weedbox/queryhelper"
 	"go.uber.org/zap"
 
+	"github.com/weedbox/user-modules/auth"
 	"github.com/weedbox/user-modules/user"
 )
 
@@ -131,7 +132,7 @@ func (m *UserAPIs) update(c *gin.Context) {
 	})
 }
 
-// updatePassword updates a user's password
+// updatePassword resets a user's password (admin operation, no current password required)
 func (m *UserAPIs) updatePassword(c *gin.Context) {
 	var req UpdatePasswordRequest
 
@@ -149,21 +150,7 @@ func (m *UserAPIs) updatePassword(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	// Verify current password first
-	if err := m.Params().User.VerifyPassword(ctx, req.URI.ID, req.Body.CurrentPassword); err != nil {
-		switch err {
-		case user.ErrNotFound:
-			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		case user.ErrInvalidPassword:
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Current password is incorrect"})
-		default:
-			m.Logger().Error("Failed to verify password", zap.Error(err))
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		}
-		return
-	}
-
-	// Update password
+	// Update password directly (admin reset)
 	if err := m.Params().User.UpdatePassword(ctx, req.URI.ID, req.Body.NewPassword); err != nil {
 		switch err {
 		case user.ErrNotFound:
@@ -178,6 +165,124 @@ func (m *UserAPIs) updatePassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, UpdatePasswordResponse{
+		Message: "password reset successfully",
+	})
+}
+
+// getMe retrieves the authenticated user's own information
+func (m *UserAPIs) getMe(c *gin.Context) {
+	userID, ok := auth.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	ctx := c.Request.Context()
+	u, err := m.Params().User.Get(ctx, userID)
+	if err != nil {
+		if err == user.ErrNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			return
+		}
+
+		m.Logger().Error("Failed to get user", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, GetMeResponse{
+		User: m.toEntry(u),
+	})
+}
+
+// updateMe updates the authenticated user's own information (cannot change roles/status)
+func (m *UserAPIs) updateMe(c *gin.Context) {
+	userID, ok := auth.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	var req UpdateMeRequest
+	if err := c.ShouldBindJSON(&req.Body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	cfg := &user.UserConfig{
+		Username:    req.Body.Username,
+		Email:       req.Body.Email,
+		DisplayName: req.Body.DisplayName,
+	}
+
+	ctx := c.Request.Context()
+	u, err := m.Params().User.Update(ctx, userID, cfg)
+	if err != nil {
+		switch err {
+		case user.ErrNotFound:
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		case user.ErrUsernameExists:
+			c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
+		case user.ErrEmailExists:
+			c.JSON(http.StatusConflict, gin.H{"error": "Email already exists"})
+		default:
+			m.Logger().Error("Failed to update user", zap.Error(err))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, UpdateMeResponse{
+		Message: "user updated successfully",
+		User:    m.toEntry(u),
+	})
+}
+
+// updateMyPassword updates the authenticated user's own password (requires current password)
+func (m *UserAPIs) updateMyPassword(c *gin.Context) {
+	userID, ok := auth.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	var req UpdateMyPasswordRequest
+	if err := c.ShouldBindJSON(&req.Body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	// Verify current password first
+	if err := m.Params().User.VerifyPassword(ctx, userID, req.Body.CurrentPassword); err != nil {
+		switch err {
+		case user.ErrNotFound:
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		case user.ErrInvalidPassword:
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Current password is incorrect"})
+		default:
+			m.Logger().Error("Failed to verify password", zap.Error(err))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	// Update password
+	if err := m.Params().User.UpdatePassword(ctx, userID, req.Body.NewPassword); err != nil {
+		switch err {
+		case user.ErrNotFound:
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		case user.ErrPasswordTooShort:
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Password must be at least 8 characters"})
+		default:
+			m.Logger().Error("Failed to update password", zap.Error(err))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, UpdateMyPasswordResponse{
 		Message: "password updated successfully",
 	})
 }

@@ -53,6 +53,11 @@ func (m *UserAPIs) OnStart(ctx context.Context) error {
 	// Register routes
 	router := m.Params().HTTPServer.GetRouter().Group("/apis/v1")
 
+	// Self-service (authenticated, no specific permission required)
+	router.GET("/me", m.requirePerm("*"), m.getMe)
+	router.PUT("/me", m.requirePerm("*"), m.updateMe)
+	router.PUT("/me/password", m.requirePerm("*"), m.updateMyPassword)
+
 	// List (plural form)
 	router.GET("/users", m.requirePerm(permissions.PermUserList), m.list)
 
@@ -62,8 +67,8 @@ func (m *UserAPIs) OnStart(ctx context.Context) error {
 	router.PUT("/user/:id", m.requirePerm(permissions.PermUserUpdate), m.update)
 	router.DELETE("/user/:id", m.requirePerm(permissions.PermUserDelete), m.delete)
 
-	// Password management
-	router.PUT("/user/:id/password", m.requirePerm(permissions.PermUserPasswordUpdate), m.updatePassword)
+	// Password management (admin reset, no current password required)
+	router.PUT("/user/:id/password", m.requirePerm(permissions.PermUserUpdate), m.updatePassword)
 
 	// Authentication (internal API, typically called by auth module, requires user.read permission)
 	router.POST("/user/authenticate", m.requirePerm(permissions.PermUserRead), m.authenticate)

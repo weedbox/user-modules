@@ -46,20 +46,46 @@ type UpdateRequest struct {
 	Body UpdateRequestBody
 }
 
-// --- Update Password ---
+// --- Update Password (Admin reset) ---
 
 type UpdatePasswordRequestURI struct {
 	ID string `uri:"id" binding:"required"`
 }
 
 type UpdatePasswordRequestBody struct {
-	CurrentPassword string `json:"current_password" binding:"required"`
-	NewPassword     string `json:"new_password" binding:"required,min=8"`
+	NewPassword string `json:"new_password" binding:"required,min=8"`
 }
 
 type UpdatePasswordRequest struct {
 	URI  UpdatePasswordRequestURI
 	Body UpdatePasswordRequestBody
+}
+
+// --- Self-Service: Get Me ---
+
+type GetMeRequest struct{}
+
+// --- Self-Service: Update Me ---
+
+type UpdateMeRequestBody struct {
+	Username    string `json:"username" binding:"omitempty,min=3,max=255"`
+	Email       string `json:"email" binding:"omitempty,email"`
+	DisplayName string `json:"display_name"`
+}
+
+type UpdateMeRequest struct {
+	Body UpdateMeRequestBody
+}
+
+// --- Self-Service: Update My Password ---
+
+type UpdateMyPasswordRequestBody struct {
+	CurrentPassword string `json:"current_password" binding:"required"`
+	NewPassword     string `json:"new_password" binding:"required,min=8"`
+}
+
+type UpdateMyPasswordRequest struct {
+	Body UpdateMyPasswordRequestBody
 }
 
 // --- Delete ---
@@ -132,8 +158,24 @@ type UpdateResponse struct {
 	User    *UserEntry `json:"user"`
 }
 
-// UpdatePasswordResponse update password response
+// UpdatePasswordResponse update password response (admin reset)
 type UpdatePasswordResponse struct {
+	Message string `json:"message"`
+}
+
+// GetMeResponse self-service get me response
+type GetMeResponse struct {
+	User *UserEntry `json:"user"`
+}
+
+// UpdateMeResponse self-service update me response
+type UpdateMeResponse struct {
+	Message string     `json:"message"`
+	User    *UserEntry `json:"user"`
+}
+
+// UpdateMyPasswordResponse self-service update my password response
+type UpdateMyPasswordResponse struct {
 	Message string `json:"message"`
 }
 

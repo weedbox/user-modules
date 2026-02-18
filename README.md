@@ -124,6 +124,14 @@ export MYAPP_HTTP_SERVER_PORT=8080
 | POST | `/apis/v1/auth/refresh` | Public | Refresh tokens using a refresh token |
 | POST | `/apis/v1/auth/logout` | Public | Revoke a refresh token |
 
+### Self-Service (`user_apis`)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/apis/v1/me` | Authenticated | Get own user information |
+| PUT | `/apis/v1/me` | Authenticated | Update own information (cannot change roles/status) |
+| PUT | `/apis/v1/me/password` | Authenticated | Change own password (requires current password) |
+
 ### User Management (`user_apis`)
 
 | Method | Path | Permission | Description |
@@ -133,7 +141,7 @@ export MYAPP_HTTP_SERVER_PORT=8080
 | GET | `/apis/v1/user/:id` | `user.read` | Get user details |
 | PUT | `/apis/v1/user/:id` | `user.update` | Update user information |
 | DELETE | `/apis/v1/user/:id` | `user.delete` | Delete a user |
-| PUT | `/apis/v1/user/:id/password` | `user.password.update` | Update user password |
+| PUT | `/apis/v1/user/:id/password` | `user.update` | Admin reset user password (no current password required) |
 | POST | `/apis/v1/user/authenticate` | `user.read` | Authenticate credentials |
 
 ### Role Management (`role_apis`)

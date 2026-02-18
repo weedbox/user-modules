@@ -40,16 +40,6 @@ func GetBuiltinResourceConfigs() []privy.ResourceConfig {
 			Name:        "User",
 			Description: "User management",
 			Actions:     CRUDActions(),
-			SubResources: []privy.Resource{
-				{
-					Key:         "password",
-					Name:        "Password",
-					Description: "User password management",
-					Actions: []privy.Action{
-						privy.DefineAction("update", "Update Password", "Update user password"),
-					},
-				},
-			},
 		},
 
 		// Role management
@@ -91,8 +81,6 @@ func GetBuiltinDefaultRoles() map[string]privy.RoleConfig {
 				"auth.login",
 				"auth.logout",
 				"auth.refresh",
-				"user.read",
-				"user.password.update",
 			},
 		},
 	}
@@ -126,8 +114,6 @@ const (
 	PermUserUpdate         = "user.update"
 	PermUserDelete         = "user.delete"
 	PermUserList           = "user.list"
-	PermUserPasswordUpdate = "user.password.update"
-
 	// Role permissions
 	PermRoleCreate = "role.create"
 	PermRoleRead   = "role.read"
