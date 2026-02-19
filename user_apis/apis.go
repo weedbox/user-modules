@@ -14,6 +14,19 @@ import (
 )
 
 // create creates a user
+//
+//	@Summary		Create a user
+//	@Description	Create a new user account
+//	@Tags			User
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		CreateRequestBody	true	"User creation payload"
+//	@Success		201		{object}	CreateResponse
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		409		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/apis/v1/user [post]
 func (m *UserAPIs) create(c *gin.Context) {
 	var req CreateRequest
 
@@ -59,6 +72,18 @@ func (m *UserAPIs) create(c *gin.Context) {
 }
 
 // get retrieves a user
+//
+//	@Summary		Get a user
+//	@Description	Retrieve a user by ID
+//	@Tags			User
+//	@Produce		json
+//	@Param			id	path		string	true	"User ID"
+//	@Success		200	{object}	GetResponse
+//	@Failure		400	{object}	ErrorResponse
+//	@Failure		404	{object}	ErrorResponse
+//	@Failure		500	{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/apis/v1/user/{id} [get]
 func (m *UserAPIs) get(c *gin.Context) {
 	var req GetRequest
 
@@ -86,6 +111,21 @@ func (m *UserAPIs) get(c *gin.Context) {
 }
 
 // update updates a user
+//
+//	@Summary		Update a user
+//	@Description	Update user information by ID
+//	@Tags			User
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string				true	"User ID"
+//	@Param			body	body		UpdateRequestBody	true	"User update payload"
+//	@Success		200		{object}	UpdateResponse
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		404		{object}	ErrorResponse
+//	@Failure		409		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/apis/v1/user/{id} [put]
 func (m *UserAPIs) update(c *gin.Context) {
 	var req UpdateRequest
 
@@ -133,6 +173,20 @@ func (m *UserAPIs) update(c *gin.Context) {
 }
 
 // updatePassword resets a user's password (admin operation, no current password required)
+//
+//	@Summary		Reset user password
+//	@Description	Admin reset a user's password (no current password required)
+//	@Tags			User
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string						true	"User ID"
+//	@Param			body	body		UpdatePasswordRequestBody	true	"New password payload"
+//	@Success		200		{object}	UpdatePasswordResponse
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		404		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/apis/v1/user/{id}/password [put]
 func (m *UserAPIs) updatePassword(c *gin.Context) {
 	var req UpdatePasswordRequest
 
@@ -170,6 +224,17 @@ func (m *UserAPIs) updatePassword(c *gin.Context) {
 }
 
 // getMe retrieves the authenticated user's own information
+//
+//	@Summary		Get current user
+//	@Description	Retrieve the authenticated user's own information
+//	@Tags			Self-Service
+//	@Produce		json
+//	@Success		200	{object}	GetMeResponse
+//	@Failure		401	{object}	ErrorResponse
+//	@Failure		404	{object}	ErrorResponse
+//	@Failure		500	{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/apis/v1/me [get]
 func (m *UserAPIs) getMe(c *gin.Context) {
 	userID, ok := auth.GetUserID(c)
 	if !ok {
@@ -196,6 +261,21 @@ func (m *UserAPIs) getMe(c *gin.Context) {
 }
 
 // updateMe updates the authenticated user's own information (cannot change roles/status)
+//
+//	@Summary		Update current user
+//	@Description	Update the authenticated user's own information (cannot change roles/status)
+//	@Tags			Self-Service
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		UpdateMeRequestBody	true	"Update payload"
+//	@Success		200		{object}	UpdateMeResponse
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		401		{object}	ErrorResponse
+//	@Failure		404		{object}	ErrorResponse
+//	@Failure		409		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/apis/v1/me [put]
 func (m *UserAPIs) updateMe(c *gin.Context) {
 	userID, ok := auth.GetUserID(c)
 	if !ok {
@@ -239,6 +319,20 @@ func (m *UserAPIs) updateMe(c *gin.Context) {
 }
 
 // updateMyPassword updates the authenticated user's own password (requires current password)
+//
+//	@Summary		Change own password
+//	@Description	Update the authenticated user's own password (requires current password)
+//	@Tags			Self-Service
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		UpdateMyPasswordRequestBody	true	"Password change payload"
+//	@Success		200		{object}	UpdateMyPasswordResponse
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		401		{object}	ErrorResponse
+//	@Failure		404		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/apis/v1/me/password [put]
 func (m *UserAPIs) updateMyPassword(c *gin.Context) {
 	userID, ok := auth.GetUserID(c)
 	if !ok {
@@ -288,6 +382,18 @@ func (m *UserAPIs) updateMyPassword(c *gin.Context) {
 }
 
 // delete deletes a user
+//
+//	@Summary		Delete a user
+//	@Description	Delete a user by ID
+//	@Tags			User
+//	@Produce		json
+//	@Param			id	path		string	true	"User ID"
+//	@Success		200	{object}	DeleteResponse
+//	@Failure		400	{object}	ErrorResponse
+//	@Failure		404	{object}	ErrorResponse
+//	@Failure		500	{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/apis/v1/user/{id} [delete]
 func (m *UserAPIs) delete(c *gin.Context) {
 	var req DeleteRequest
 
@@ -315,6 +421,24 @@ func (m *UserAPIs) delete(c *gin.Context) {
 }
 
 // list lists users with pagination
+//
+//	@Summary		List users
+//	@Description	List users with pagination, search, and filtering
+//	@Tags			User
+//	@Produce		json
+//	@Param			page			query		int		false	"Page number"				default(1)
+//	@Param			page_size		query		int		false	"Page size"					default(10)
+//	@Param			keywords		query		string	false	"Search keywords"
+//	@Param			search_fields	query		string	false	"Comma-separated search fields"
+//	@Param			orderby			query		string	false	"Comma-separated order-by fields"
+//	@Param			order			query		int		false	"Sort order: 1=asc, -1=desc"	default(-1)
+//	@Param			status			query		string	false	"Filter by status"
+//	@Param			role			query		string	false	"Filter by role"
+//	@Success		200				{object}	ListResponse
+//	@Failure		400				{object}	ErrorResponse
+//	@Failure		500				{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/apis/v1/users [get]
 func (m *UserAPIs) list(c *gin.Context) {
 	var req ListRequest
 
@@ -407,6 +531,19 @@ func (m *UserAPIs) list(c *gin.Context) {
 }
 
 // authenticate authenticates a user
+//
+//	@Summary		Authenticate a user
+//	@Description	Verify user credentials (username/email and password)
+//	@Tags			User
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		AuthenticateRequestBody	true	"Credentials payload"
+//	@Success		200		{object}	AuthenticateResponse
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		401		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/apis/v1/user/authenticate [post]
 func (m *UserAPIs) authenticate(c *gin.Context) {
 	var req AuthenticateRequest
 

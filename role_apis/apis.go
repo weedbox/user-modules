@@ -11,6 +11,19 @@ import (
 )
 
 // create creates a new role
+//
+//	@Summary		Create a role
+//	@Description	Create a new role with optional permissions
+//	@Tags			Role
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		CreateRequestBody	true	"Role creation payload"
+//	@Success		201		{object}	CreateResponse
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		409		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/apis/v1/role [post]
 func (m *RoleAPIs) create(c *gin.Context) {
 	var req CreateRequest
 
@@ -44,6 +57,18 @@ func (m *RoleAPIs) create(c *gin.Context) {
 }
 
 // get retrieves a role by key
+//
+//	@Summary		Get a role
+//	@Description	Retrieve a role by its key
+//	@Tags			Role
+//	@Produce		json
+//	@Param			key	path		string	true	"Role key"
+//	@Success		200	{object}	GetResponse
+//	@Failure		400	{object}	ErrorResponse
+//	@Failure		404	{object}	ErrorResponse
+//	@Failure		500	{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/apis/v1/role/{key} [get]
 func (m *RoleAPIs) get(c *gin.Context) {
 	var req GetRequest
 
@@ -70,6 +95,20 @@ func (m *RoleAPIs) get(c *gin.Context) {
 }
 
 // update updates an existing role
+//
+//	@Summary		Update a role
+//	@Description	Update an existing role by key
+//	@Tags			Role
+//	@Accept			json
+//	@Produce		json
+//	@Param			key		path		string				true	"Role key"
+//	@Param			body	body		UpdateRequestBody	true	"Role update payload"
+//	@Success		200		{object}	UpdateResponse
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		404		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/apis/v1/role/{key} [put]
 func (m *RoleAPIs) update(c *gin.Context) {
 	var req UpdateRequest
 
@@ -108,6 +147,18 @@ func (m *RoleAPIs) update(c *gin.Context) {
 }
 
 // delete deletes a role by key
+//
+//	@Summary		Delete a role
+//	@Description	Delete a role by its key
+//	@Tags			Role
+//	@Produce		json
+//	@Param			key	path		string	true	"Role key"
+//	@Success		200	{object}	DeleteResponse
+//	@Failure		400	{object}	ErrorResponse
+//	@Failure		404	{object}	ErrorResponse
+//	@Failure		500	{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/apis/v1/role/{key} [delete]
 func (m *RoleAPIs) delete(c *gin.Context) {
 	var req DeleteRequest
 
@@ -134,6 +185,15 @@ func (m *RoleAPIs) delete(c *gin.Context) {
 }
 
 // list lists all roles
+//
+//	@Summary		List roles
+//	@Description	List all available roles
+//	@Tags			Role
+//	@Produce		json
+//	@Success		200	{object}	ListResponse
+//	@Failure		500	{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/apis/v1/roles [get]
 func (m *RoleAPIs) list(c *gin.Context) {
 	roles, err := m.Params().RBAC.ListRoles()
 	if err != nil {
@@ -153,6 +213,20 @@ func (m *RoleAPIs) list(c *gin.Context) {
 }
 
 // assignPermissions adds permissions to a role
+//
+//	@Summary		Assign permissions to a role
+//	@Description	Add permissions to an existing role
+//	@Tags			Role
+//	@Accept			json
+//	@Produce		json
+//	@Param			key		path		string					true	"Role key"
+//	@Param			body	body		PermissionsRequestBody	true	"Permissions to assign"
+//	@Success		200		{object}	AssignPermissionsResponse
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		404		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/apis/v1/role/{key}/permissions [post]
 func (m *RoleAPIs) assignPermissions(c *gin.Context) {
 	var req PermissionsRequest
 
@@ -193,6 +267,20 @@ func (m *RoleAPIs) assignPermissions(c *gin.Context) {
 }
 
 // removePermissions removes permissions from a role
+//
+//	@Summary		Remove permissions from a role
+//	@Description	Remove permissions from an existing role
+//	@Tags			Role
+//	@Accept			json
+//	@Produce		json
+//	@Param			key		path		string					true	"Role key"
+//	@Param			body	body		PermissionsRequestBody	true	"Permissions to remove"
+//	@Success		200		{object}	RemovePermissionsResponse
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		404		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/apis/v1/role/{key}/permissions [delete]
 func (m *RoleAPIs) removePermissions(c *gin.Context) {
 	var req PermissionsRequest
 
@@ -233,6 +321,15 @@ func (m *RoleAPIs) removePermissions(c *gin.Context) {
 }
 
 // listResources lists all top-level resources
+//
+//	@Summary		List resources
+//	@Description	List all top-level resources (permission catalog)
+//	@Tags			Resource
+//	@Produce		json
+//	@Success		200	{object}	ListResourcesResponse
+//	@Failure		500	{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/apis/v1/resources [get]
 func (m *RoleAPIs) listResources(c *gin.Context) {
 	resources, err := m.Params().RBAC.ListResources()
 	if err != nil {
@@ -252,6 +349,18 @@ func (m *RoleAPIs) listResources(c *gin.Context) {
 }
 
 // getResource gets a resource by path
+//
+//	@Summary		Get a resource
+//	@Description	Get resource details by path
+//	@Tags			Resource
+//	@Produce		json
+//	@Param			path	path		string	true	"Resource path"
+//	@Success		200		{object}	GetResourceResponse
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		404		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Security		BearerAuth
+//	@Router			/apis/v1/resource/{path} [get]
 func (m *RoleAPIs) getResource(c *gin.Context) {
 	// Gin wildcard includes leading slash, trim it
 	path := strings.TrimPrefix(c.Param("path"), "/")

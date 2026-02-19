@@ -284,6 +284,52 @@ Client                    Server
 
 The two-layer middleware design (`authenticate` + `require_permission`) supports ingress/gateway architectures where token validation happens at the edge and user info is forwarded via the `X-User-Info` header.
 
+## Swagger / OpenAPI Integration
+
+All API handler functions include [swaggo/swag](https://github.com/swaggo/swag) annotations. Downstream projects can generate a complete Swagger/OpenAPI spec without writing any extra annotations.
+
+### Step 1: Add General API Info
+
+In your downstream project's `main.go` (or any file parsed by `swag init`), add the general API info comments:
+
+```go
+//	@title			My Application API
+//	@version		1.0
+//	@description	API documentation for my application
+
+//	@securityDefinitions.apikey	BearerAuth
+//	@in							header
+//	@name						Authorization
+//	@description				Enter your bearer token as: Bearer <token>
+
+func main() {
+    // ...
+}
+```
+
+### Step 2: Generate Swagger Docs
+
+```bash
+swag init --parseDependency --parseDependencyLevel 3
+```
+
+This scans all dependency packages (including `user-modules`) and generates `docs/swagger.json`, `docs/swagger.yaml`, and `docs/docs.go`.
+
+### Step 3: Serve Swagger UI
+
+```go
+import (
+    _ "your-project/docs" // generated docs package
+    swaggerFiles "github.com/swaggo/files"
+    ginSwagger "github.com/swaggo/gin-swagger"
+)
+
+// Register Swagger UI route
+router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+```
+
+Then visit `http://localhost:8080/swagger/index.html` to browse the API documentation.
+
 ## License
 
 Apache License 2.0

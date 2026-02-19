@@ -154,3 +154,8 @@ type ListResourcesResponse struct {
 type GetResourceResponse struct {
 	Resource *ResourceEntry `json:"resource"`
 }
+
+// ErrorResponse error response
+type ErrorResponse struct {
+	Error string `json:"error" example:"error message"`
+}

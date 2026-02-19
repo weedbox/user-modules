@@ -10,6 +10,19 @@ import (
 )
 
 // login authenticates a user and returns tokens
+//
+//	@Summary		Login
+//	@Description	Authenticate with username/email and password to obtain tokens
+//	@Tags			Authentication
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		LoginRequestBody	true	"Login credentials"
+//	@Success		200		{object}	LoginResponse
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		401		{object}	ErrorResponse
+//	@Failure		403		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Router			/apis/v1/auth/login [post]
 func (m *AuthAPIs) login(c *gin.Context) {
 	var req LoginRequest
 
@@ -62,6 +75,19 @@ func (m *AuthAPIs) login(c *gin.Context) {
 }
 
 // refresh exchanges a refresh token for new tokens
+//
+//	@Summary		Refresh tokens
+//	@Description	Exchange a refresh token for a new token pair
+//	@Tags			Authentication
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		RefreshRequestBody	true	"Refresh token"
+//	@Success		200		{object}	RefreshResponse
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		401		{object}	ErrorResponse
+//	@Failure		403		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Router			/apis/v1/auth/refresh [post]
 func (m *AuthAPIs) refresh(c *gin.Context) {
 	var req RefreshRequest
 
@@ -103,6 +129,18 @@ func (m *AuthAPIs) refresh(c *gin.Context) {
 }
 
 // logout revokes a refresh token
+//
+//	@Summary		Logout
+//	@Description	Revoke a refresh token
+//	@Tags			Authentication
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		LogoutRequestBody	true	"Refresh token to revoke"
+//	@Success		200		{object}	LogoutResponse
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		404		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Router			/apis/v1/auth/logout [post]
 func (m *AuthAPIs) logout(c *gin.Context) {
 	var req LogoutRequest
 

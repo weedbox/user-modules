@@ -202,3 +202,8 @@ type AuthenticateResponse struct {
 	Message string     `json:"message"`
 	User    *UserEntry `json:"user,omitempty"`
 }
+
+// ErrorResponse error response
+type ErrorResponse struct {
+	Error string `json:"error" example:"error message"`
+}

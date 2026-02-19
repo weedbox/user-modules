@@ -73,3 +73,8 @@ type RefreshResponse struct {
 type LogoutResponse struct {
 	Message string `json:"message"`
 }
+
+// ErrorResponse error response
+type ErrorResponse struct {
+	Error string `json:"error" example:"error message"`
+}
