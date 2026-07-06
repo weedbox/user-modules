@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
@@ -16,6 +17,11 @@ const (
 	// HeaderUserInfo is the header name for passing user info (for ingress integration)
 	HeaderUserInfo = "X-User-Info"
 
+	// HeaderGatewaySecret is an optional shared-secret header proving a request
+	// originated from the trusted gateway. Only consulted in gateway mode when
+	// trusted_header_secret is configured.
+	HeaderGatewaySecret = "X-Gateway-Secret"
+
 	// ContextKeySession is the key for storing session info in gin context
 	ContextKeySession = "auth_session"
 
@@ -27,6 +33,19 @@ const (
 
 	// ContextKeyRoles is the key for storing user roles in gin context
 	ContextKeyRoles = "auth_roles"
+)
+
+const (
+	// ModeStandalone: this service is the sole authority on identity. It validates the
+	// JWT itself and NEVER trusts a client-supplied X-User-Info header (any inbound copy
+	// is stripped before processing). This is the secure default.
+	ModeStandalone = "standalone"
+
+	// ModeGateway: a trusted upstream (API gateway / service mesh) validates the token and
+	// injects X-User-Info; this service trusts that header. Only safe when the service is
+	// reachable exclusively through that gateway and the gateway strips client-supplied
+	// X-User-Info. Optionally hardened with trusted_header_secret (see HeaderGatewaySecret).
+	ModeGateway = "gateway"
 )
 
 // Session represents the authenticated user session
@@ -61,12 +80,30 @@ func (m *AuthManager) GetMiddleware(name string) interface{} {
 
 // authenticateMiddleware validates JWT token and sets user info in header
 // This middleware:
-// 1. Extracts JWT token from Authorization header (Bearer token)
-// 2. If no token provided, passes through without setting header
-// 3. If token provided, validates and sets X-User-Info header
-// 4. If token is invalid/expired, returns 401 error
+// 1. Establishes trust in the X-User-Info header according to the configured mode:
+//    - standalone: strips any inbound (client-supplied) X-User-Info; identity may only
+//      come from a token this service validates below.
+//    - gateway: keeps the inbound X-User-Info (injected by a trusted upstream); when a
+//      trusted_header_secret is configured, only keeps it if X-Gateway-Secret matches.
+// 2. Extracts JWT token from Authorization header (Bearer token)
+// 3. If no token provided, passes through (identity, if any, is the trusted X-User-Info)
+// 4. If token provided, validates and sets X-User-Info header from the token
+// 5. If token is invalid/expired, returns 401 error
 func (m *AuthManager) authenticateMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Establish trust in any inbound X-User-Info before anything reads it.
+		if m.authMode != ModeGateway {
+			// standalone: never trust a client-supplied identity header.
+			c.Request.Header.Del(HeaderUserInfo)
+		} else if m.trustedHeaderSecret != "" {
+			// gateway with caller verification: only honor the forwarded identity when the
+			// request proves it came from the trusted gateway; otherwise strip it.
+			got := c.GetHeader(HeaderGatewaySecret)
+			if subtle.ConstantTimeCompare([]byte(got), []byte(m.trustedHeaderSecret)) != 1 {
+				c.Request.Header.Del(HeaderUserInfo)
+			}
+		}
+
 		// Get Authorization header
 		authHeader := c.GetHeader(HeaderAuthorization)
 		if authHeader == "" {
@@ -143,8 +180,12 @@ func (m *AuthManager) authenticateMiddleware() gin.HandlerFunc {
 // Usage: auth.GetMiddleware("require_permission")("admin") for admin role check
 func (m *AuthManager) requirePermissionMiddleware(permission string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// "*" means public endpoint, no authentication required
+		// "*" means public endpoint: authentication is optional. If a trusted identity is
+		// present (set by authenticateMiddleware from a token, or forwarded by a trusted
+		// gateway), expose it to handlers so they can personalize; never reject when it is
+		// missing or malformed.
 		if permission == "*" {
+			applySessionFromHeader(c, c.GetHeader(HeaderUserInfo))
 			c.Next()
 			return
 		}
@@ -201,6 +242,29 @@ func (m *AuthManager) requirePermissionMiddleware(permission string) gin.Handler
 
 		c.Next()
 	}
+}
+
+// applySessionFromHeader best-effort decodes X-User-Info and stores the identity in the
+// gin context. Returns false when the header is absent or malformed. Used for optional
+// authentication on public ("*") endpoints; callers that require authentication use the
+// strict path in requirePermissionMiddleware instead.
+func applySessionFromHeader(c *gin.Context, header string) bool {
+	if header == "" {
+		return false
+	}
+	sessionJSON, err := base64.StdEncoding.DecodeString(header)
+	if err != nil {
+		return false
+	}
+	var session Session
+	if err := json.Unmarshal(sessionJSON, &session); err != nil {
+		return false
+	}
+	c.Set(ContextKeySession, &session)
+	c.Set(ContextKeyUserID, session.UserID)
+	c.Set(ContextKeyUsername, session.Username)
+	c.Set(ContextKeyRoles, session.Roles)
+	return true
 }
 
 // GetSession is a helper function to get session from gin context

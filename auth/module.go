@@ -32,6 +32,13 @@ type AuthManager struct {
 	accessTokenExpiry  time.Duration
 	refreshTokenExpiry time.Duration
 	issuer             string
+
+	// authMode is "standalone" (validate token here, never trust inbound X-User-Info) or
+	// "gateway" (trust X-User-Info injected by a trusted upstream). See middleware.go.
+	authMode string
+	// trustedHeaderSecret, when set (gateway mode only), requires a matching X-Gateway-Secret
+	// header before an inbound X-User-Info is trusted. Empty disables the check.
+	trustedHeaderSecret string
 }
 
 func Module(scope string) fx.Option {
@@ -58,6 +65,17 @@ func (m *AuthManager) InitDefaultConfigs() {
 
 	// Token issuer
 	viper.SetDefault(m.GetConfigPath("issuer"), "weedbox")
+
+	// Authentication mode: "standalone" (default, secure) or "gateway".
+	//   standalone: this service validates the JWT itself and never trusts a client-supplied
+	//               X-User-Info header (any inbound copy is stripped).
+	//   gateway:    a trusted upstream injects X-User-Info and this service trusts it.
+	// Gateway deployments must opt in explicitly.
+	viper.SetDefault(m.GetConfigPath("mode"), ModeStandalone)
+
+	// Optional shared secret for gateway mode. When non-empty, an inbound X-User-Info is only
+	// trusted if the request also carries a matching X-Gateway-Secret header. Empty = no check.
+	viper.SetDefault(m.GetConfigPath("trusted_header_secret"), "")
 }
 
 func (m *AuthManager) OnStart(ctx context.Context) error {
@@ -81,6 +99,21 @@ func (m *AuthManager) OnStart(ctx context.Context) error {
 	m.refreshTokenExpiry = refreshExpiry
 
 	m.issuer = viper.GetString(m.GetConfigPath("issuer"))
+
+	// Load authentication mode (defaults to secure standalone on any unknown value).
+	m.authMode = viper.GetString(m.GetConfigPath("mode"))
+	if m.authMode != ModeStandalone && m.authMode != ModeGateway {
+		m.Logger().Warn("Invalid auth mode, falling back to standalone",
+			zap.String("mode", m.authMode))
+		m.authMode = ModeStandalone
+	}
+	m.trustedHeaderSecret = viper.GetString(m.GetConfigPath("trusted_header_secret"))
+	if m.authMode == ModeGateway && m.trustedHeaderSecret == "" {
+		m.Logger().Warn("auth mode is 'gateway' without trusted_header_secret: any inbound " +
+			"X-User-Info will be trusted; ensure the service is reachable only via the gateway " +
+			"and the gateway strips client-supplied X-User-Info")
+	}
+	m.Logger().Info("Auth mode", zap.String("mode", m.authMode))
 
 	// Auto-migrate refresh token table
 	db := m.Params().Database.GetDB()
