@@ -59,6 +59,35 @@ func (m *AuthManager) Login(ctx context.Context, identifier, password string) (*
 	return tokenPair, nil
 }
 
+// LoginWithTrustedIdentity issues a token pair for a user whose identity has
+// already been verified by the caller through a trusted channel (e.g. an OAuth
+// provider callback). It performs no password check, so callers MUST only pass
+// user IDs they have authenticated themselves.
+func (m *AuthManager) LoginWithTrustedIdentity(ctx context.Context, userID string) (*TokenPair, error) {
+	u, err := m.Params().User.Get(ctx, userID)
+	if err != nil {
+		if err == user.ErrNotFound {
+			return nil, ErrInvalidCredentials
+		}
+		m.Logger().Error("Failed to load user for trusted identity login", zap.Error(err))
+		return nil, ErrOperationFailed
+	}
+
+	// Check user status
+	if u.Status != "active" {
+		return nil, ErrUserInactive
+	}
+
+	// Generate token pair
+	tokenPair, err := m.generateTokenPair(ctx, u)
+	if err != nil {
+		m.Logger().Error("Failed to generate token pair", zap.Error(err))
+		return nil, ErrOperationFailed
+	}
+
+	return tokenPair, nil
+}
+
 // RefreshTokens validates a refresh token and returns a new token pair
 func (m *AuthManager) RefreshTokens(ctx context.Context, refreshToken string) (*TokenPair, error) {
 	db := m.Params().Database.GetDB()
