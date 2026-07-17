@@ -6,6 +6,7 @@ A collection of reusable [weedbox](https://github.com/weedbox/weedbox) modules f
 
 - **User Management** — CRUD operations with bcrypt password hashing, UUID v7 IDs, and pagination/search via [queryhelper](https://github.com/weedbox/queryhelper)
 - **Authentication** — JWT access tokens + database-backed refresh tokens with automatic rotation
+- **Access Keys** — Self-service API keys (hash-only storage, optional expiry) that external programs exchange for standard token pairs
 - **RBAC** — Role-based access control powered by [privy](https://github.com/weedbox/privy), with builtin roles (admin, user)
 - **REST APIs** — Ready-to-use Gin HTTP handlers for user and auth endpoints
 - **Extensible Permissions** — Builtin user/auth permissions with a merge API to add your own resources and roles
@@ -25,9 +26,11 @@ go get github.com/weedbox/user-modules
 | [rbac](rbac/) | `github.com/weedbox/user-modules/rbac` | RBAC manager with privy integration |
 | [user](user/) | `github.com/weedbox/user-modules/user` | User CRUD, password hashing, authentication |
 | [auth](auth/) | `github.com/weedbox/user-modules/auth` | JWT token management and middleware |
+| [access_key](access_key/) | `github.com/weedbox/user-modules/access_key` | User-owned API access keys (hash-only storage, optional expiry) |
 | [user_apis](user_apis/) | `github.com/weedbox/user-modules/user_apis` | REST API handlers for user management |
 | [auth_apis](auth_apis/) | `github.com/weedbox/user-modules/auth_apis` | REST API handlers for login/refresh/logout |
 | [role_apis](role_apis/) | `github.com/weedbox/user-modules/role_apis` | REST API handlers for role/resource management |
+| [access_key_apis](access_key_apis/) | `github.com/weedbox/user-modules/access_key_apis` | REST API handlers for access key management and token exchange |
 | [http_token_validator](http_token_validator/) | `github.com/weedbox/user-modules/http_token_validator` | Optional global auth middleware |
 
 ## Quick Start
@@ -123,6 +126,15 @@ export MYAPP_HTTP_SERVER_PORT=8080
 | POST | `/apis/v1/auth/login` | Public | Login with username/email and password |
 | POST | `/apis/v1/auth/refresh` | Public | Refresh tokens using a refresh token |
 | POST | `/apis/v1/auth/logout` | Public | Revoke a refresh token |
+
+### Access Keys (`access_key_apis`)
+
+| Method | Path | Permission | Description |
+|--------|------|------------|-------------|
+| GET | `/apis/v1/me/access-keys` | Authenticated | List own access keys (metadata only) |
+| POST | `/apis/v1/me/access-key` | Authenticated | Create an access key; plaintext returned once |
+| DELETE | `/apis/v1/me/access-key/:id` | Authenticated | Delete own access key |
+| POST | `/apis/v1/auth/access-key` | Public | Exchange a plaintext access key for a token pair |
 
 ### Self-Service (`user_apis`)
 
@@ -254,11 +266,14 @@ database.DatabaseConnector (from common-modules)
     |         |
     +---> rbac.RBACManager
     |         |
+    +---> access_key.AccessKeyManager
+    |         |
     +---> auth.AuthManager <--- user.UserManager + rbac.RBACManager
               |
               +---> user_apis (+ http_server + user.UserManager)
               +---> auth_apis (+ http_server)
               +---> role_apis (+ http_server + rbac.RBACManager)
+              +---> access_key_apis (+ http_server + access_key.AccessKeyManager)
               +---> http_token_validator (+ http_server) [optional]
 ```
 
